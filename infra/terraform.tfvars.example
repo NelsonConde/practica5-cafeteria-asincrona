@@ -1,0 +1,8 @@
+# Copia este archivo como terraform.tfvars (que no se sube a GitHub) y cambia los valores.
+proyecto = "mi-proyecto-123456"
+prefijo  = "grupo1"
+
+# Las imágenes se construyen después de crear el registro. La ruta es la que
+# muestra "terraform output registro" seguida del nombre de la imagen y su etiqueta.
+imagen_backend  = "us-central1-docker.pkg.dev/mi-proyecto-123456/grupo1-imagenes/backend:v1"
+imagen_frontend = "us-central1-docker.pkg.dev/mi-proyecto-123456/grupo1-imagenes/frontend:v1"

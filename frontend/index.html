@@ -1,0 +1,505 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cafetería UFPS</title>
+<style>
+  :root {
+    --rojo: #c8102e;
+    --rojo-oscuro: #9b0c23;
+    --rojo-suave: #fdecee;
+    --fondo: #f6f3ef;
+    --tarjeta: #ffffff;
+    --texto: #1f1b18;
+    --suave: #6f665f;
+    --borde: #e8e1d9;
+    --recibido: #5b6b80;
+    --preparando: #c27100;
+    --listo: #1f7a3d;
+    --sombra: 0 1px 2px rgba(31, 27, 24, .06), 0 4px 14px rgba(31, 27, 24, .06);
+    --radio: 14px;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--fondo);
+    color: var(--texto);
+    font: 16px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  button, input { font: inherit; }
+  [hidden] { display: none !important; }
+
+  .barra {
+    position: sticky; top: 0; z-index: 5;
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    padding: 12px 16px;
+    background: var(--rojo); color: #fff;
+    box-shadow: 0 2px 10px rgba(155, 12, 35, .25);
+  }
+  .marca { display: flex; align-items: center; gap: 10px; }
+  .logo {
+    display: grid; place-items: center;
+    width: 38px; height: 38px; border-radius: 10px;
+    background: #fff; color: var(--rojo); font-weight: 800; letter-spacing: -.5px;
+  }
+  .marca strong { display: block; font-size: 17px; line-height: 1.1; }
+  .marca small { opacity: .85; font-size: 13px; }
+  .pestanas { display: flex; background: rgba(0, 0, 0, .18); border-radius: 999px; padding: 3px; }
+  .pestanas a {
+    color: #fff; text-decoration: none; font-weight: 600; font-size: 14px;
+    padding: 6px 14px; border-radius: 999px;
+  }
+  .pestanas a[aria-current="page"] { background: #fff; color: var(--rojo); }
+
+  main { max-width: 980px; margin: 0 auto; padding: 16px 16px 140px; }
+  h1 { font-size: 24px; margin: 4px 0 2px; letter-spacing: -.3px; }
+  h2 { font-size: 18px; margin: 24px 0 10px; }
+  .sub { color: var(--suave); margin: 0 0 16px; }
+
+  .aviso {
+    max-width: 980px; margin: 16px auto 0; padding: 14px 16px;
+    border-left: 4px solid var(--rojo); border-radius: 10px;
+    background: var(--rojo-suave); color: var(--rojo-oscuro);
+  }
+  .aviso strong { display: block; margin-bottom: 2px; }
+  .aviso code { word-break: break-all; font-size: 13px; }
+  .aviso-envoltura { padding: 0 16px; }
+
+  .tarjeta { background: var(--tarjeta); border: 1px solid var(--borde); border-radius: var(--radio); box-shadow: var(--sombra); }
+
+  .menu { list-style: none; padding: 0; margin: 0; display: grid; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); }
+  .producto { display: flex; align-items: center; gap: 12px; padding: 12px; }
+  .inicial {
+    flex: none; display: grid; place-items: center;
+    width: 46px; height: 46px; border-radius: 12px;
+    font-weight: 800; font-size: 18px; color: var(--rojo-oscuro); background: var(--rojo-suave);
+  }
+  .producto .datos { flex: 1; min-width: 0; }
+  .producto .nombre { font-weight: 650; }
+  .producto .precio { color: var(--suave); font-size: 14px; }
+  .quedan { font-size: 12px; font-weight: 600; color: var(--listo); }
+  .quedan.pocas { color: var(--preparando); }
+  .quedan.agotado { color: var(--rojo); }
+  .producto.sin-existencias { opacity: .55; }
+  .contador { display: flex; align-items: center; gap: 6px; }
+  .contador button {
+    width: 34px; height: 34px; border-radius: 50%; border: 1px solid var(--borde);
+    background: #fff; color: var(--texto); font-size: 20px; line-height: 1; cursor: pointer;
+  }
+  .contador button.mas { background: var(--rojo); border-color: var(--rojo); color: #fff; }
+  .contador button:disabled { opacity: .35; cursor: default; }
+  .contador output { min-width: 18px; text-align: center; font-weight: 700; }
+  .vacio { color: var(--suave); padding: 24px 16px; text-align: center; border: 1px dashed var(--borde); border-radius: var(--radio); }
+
+  .carrito {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 4;
+    background: #fff; border-top: 1px solid var(--borde);
+    box-shadow: 0 -6px 20px rgba(31, 27, 24, .08);
+    padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
+  }
+  .carrito form { max-width: 980px; margin: 0 auto; display: grid; gap: 8px; grid-template-columns: 1fr auto; align-items: center; }
+  .carrito .resumen { grid-column: 1 / -1; display: flex; justify-content: space-between; font-size: 14px; color: var(--suave); }
+  .carrito .resumen strong { color: var(--texto); font-size: 16px; }
+  .carrito input {
+    width: 100%; padding: 11px 12px; border: 1px solid var(--borde); border-radius: 10px; background: var(--fondo);
+  }
+  .carrito input:focus { outline: 2px solid var(--rojo); outline-offset: -1px; background: #fff; }
+  .boton {
+    padding: 11px 20px; border: 0; border-radius: 10px; cursor: pointer;
+    background: var(--rojo); color: #fff; font-weight: 700;
+  }
+  .boton:disabled { background: #d9cfc7; cursor: default; }
+  .boton.secundario { background: #fff; color: var(--rojo); border: 1px solid var(--rojo); }
+  .error { grid-column: 1 / -1; margin: 0; color: var(--rojo); font-size: 14px; }
+
+  .seguimiento { max-width: 460px; margin: 8px auto 0; padding: 24px 20px; text-align: center; }
+  .seguimiento .etiqueta { margin: 0; text-transform: uppercase; letter-spacing: 1.5px; font-size: 12px; font-weight: 700; color: var(--suave); }
+  .seguimiento .numero { margin: 0; font-size: 96px; line-height: 1; font-weight: 800; color: var(--rojo); letter-spacing: -3px; }
+  .seguimiento .para { margin: 4px 0 20px; color: var(--suave); }
+  .pasos { list-style: none; padding: 0; margin: 0 0 16px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+  .pasos li { padding-top: 10px; border-top: 5px solid var(--borde); font-size: 13px; font-weight: 600; color: var(--suave); }
+  .pasos li.hecho { border-color: var(--listo); color: var(--texto); }
+  .pasos li.actual { border-color: var(--preparando); color: var(--texto); }
+  .estado-texto { margin: 0 0 18px; font-size: 18px; font-weight: 650; }
+  .estado-texto.listo { color: var(--listo); }
+  .estado-texto.rechazado { color: var(--rojo); }
+  .lineas { list-style: none; padding: 12px 0 0; margin: 0 0 18px; border-top: 1px dashed var(--borde); text-align: left; font-size: 14px; }
+  .lineas li { display: flex; justify-content: space-between; padding: 3px 0; }
+  .lineas li.total { font-weight: 700; padding-top: 8px; }
+
+  .tablero { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .columna { padding: 10px 8px; min-height: 220px; }
+  .columna h3 {
+    margin: 0 0 10px; padding-bottom: 8px; border-bottom: 3px solid currentColor;
+    font-size: 13px; text-transform: uppercase; letter-spacing: 1px; text-align: center;
+  }
+  .columna.recibido h3 { color: var(--recibido); }
+  .columna.preparando h3 { color: var(--preparando); }
+  .columna.listo h3 { color: var(--listo); }
+  .columna ul { list-style: none; padding: 0; margin: 0; display: grid; gap: 6px; }
+  .ficha { padding: 8px 6px; border-radius: 10px; background: var(--fondo); text-align: center; }
+  .ficha b { display: block; font-size: 28px; line-height: 1.05; letter-spacing: -1px; }
+  .ficha span { display: block; font-size: 12px; color: var(--suave); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .columna.preparando .ficha { background: #fff4e0; }
+  .columna.listo .ficha { background: #e6f4ea; color: var(--listo); }
+  .rechazados { margin: 10px 0 0; font-size: 14px; color: var(--suave); }
+  .rechazados b { color: var(--rojo); }
+
+  .inventario { list-style: none; padding: 6px 14px; margin: 0; }
+  .inventario li { display: flex; justify-content: space-between; align-items: center; padding: 9px 0; border-bottom: 1px solid var(--borde); }
+  .inventario li:last-child { border-bottom: 0; }
+  .pastilla { min-width: 40px; text-align: center; padding: 2px 10px; border-radius: 999px; font-weight: 700; font-size: 14px; background: #e6f4ea; color: var(--listo); }
+  .pastilla.pocas { background: #fff4e0; color: var(--preparando); }
+  .pastilla.agotado { background: var(--rojo-suave); color: var(--rojo); }
+  .pie-inventario { display: flex; justify-content: flex-end; margin-top: 12px; }
+
+  @media (min-width: 720px) {
+    .columna { padding: 14px; }
+    .ficha b { font-size: 40px; }
+    .ficha span { font-size: 14px; }
+  }
+</style>
+</head>
+<body>
+<header class="barra">
+  <div class="marca">
+    <span class="logo" aria-hidden="true">UF</span>
+    <div><strong>Cafetería UFPS</strong><small>Pide y sigue tu pedido</small></div>
+  </div>
+  <nav class="pestanas" aria-label="Vistas">
+    <a href="#pedir" data-vista="pedir">Pedir</a>
+    <a href="#pantalla" data-vista="pantalla">Pantalla</a>
+  </nav>
+</header>
+
+<div class="aviso-envoltura"><div id="aviso" class="aviso" role="alert" hidden></div></div>
+
+<main>
+  <section id="vista-pedir">
+    <div id="carta">
+      <h1>¿Qué vas a pedir?</h1>
+      <p class="sub">Haz tu pedido y te avisamos aquí cuando esté listo.</p>
+      <ul id="menu" class="menu"></ul>
+    </div>
+
+    <div id="seguimiento" class="tarjeta seguimiento" hidden>
+      <p class="etiqueta">Tu pedido</p>
+      <p id="seg-numero" class="numero"></p>
+      <p id="seg-para" class="para"></p>
+      <ol class="pasos">
+        <li data-paso="recibido">Recibido</li>
+        <li data-paso="preparando">Preparando</li>
+        <li data-paso="listo">Listo</li>
+      </ol>
+      <p id="seg-estado" class="estado-texto" aria-live="polite"></p>
+      <ul id="seg-lineas" class="lineas"></ul>
+      <button id="otro" class="boton secundario" type="button">Hacer otro pedido</button>
+    </div>
+  </section>
+
+  <section id="vista-pantalla" hidden>
+    <h1>Pedidos</h1>
+    <p class="sub">Se actualiza sola cada pocos segundos.</p>
+    <div class="tablero">
+      <div class="tarjeta columna recibido"><h3>Recibido</h3><ul id="col-recibido"></ul></div>
+      <div class="tarjeta columna preparando"><h3>Preparando</h3><ul id="col-preparando"></ul></div>
+      <div class="tarjeta columna listo"><h3>Listo</h3><ul id="col-listo"></ul></div>
+    </div>
+    <p id="rechazados" class="rechazados" hidden></p>
+
+    <h2>Inventario</h2>
+    <ul id="inventario" class="tarjeta inventario"></ul>
+    <div class="pie-inventario">
+      <button id="reponer" class="boton secundario" type="button">Reponer inventario</button>
+    </div>
+  </section>
+</main>
+
+<footer id="carrito" class="carrito" hidden>
+  <form id="form-pedido">
+    <div class="resumen"><span id="car-cuenta"></span><strong id="car-total"></strong></div>
+    <input id="cliente" maxlength="40" placeholder="Tu nombre" autocomplete="given-name" aria-label="Tu nombre">
+    <button id="pedir" class="boton" type="submit">Pedir</button>
+    <p id="error-pedido" class="error" role="alert" hidden></p>
+  </form>
+</footer>
+
+<script>
+  // server.py reemplaza el marcador por la variable de entorno BACKEND_URL.
+  const BACKEND = "__BACKEND_URL__".replace(/\/+$/, "");
+  const ESTADOS = ["recibido", "preparando", "listo"];
+  const TEXTO_ESTADO = {
+    recibido: "La cocina tiene tu pedido en la fila.",
+    preparando: "Lo están preparando.",
+    listo: "¡Listo! Pasa a recogerlo.",
+    rechazado: "No se pudo preparar.",
+  };
+  const pesos = new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 });
+  const $ = (selector) => document.querySelector(selector);
+
+  // Todo lo que viene del backend o del usuario entra al DOM con textContent.
+  function el(etiqueta, clase, texto) {
+    const nodo = document.createElement(etiqueta);
+    if (clase) nodo.className = clase;
+    if (texto !== undefined) nodo.textContent = texto;
+    return nodo;
+  }
+
+  // localStorage puede fallar (modo privado); la página funciona igual sin él.
+  function recordar(clave, valor) {
+    try { valor == null ? localStorage.removeItem(clave) : localStorage.setItem(clave, valor); } catch {}
+  }
+  function recuperar(clave) {
+    try { return localStorage.getItem(clave); } catch { return null; }
+  }
+
+  let menu = [];
+  const carrito = new Map();
+  const filas = new Map();
+  let pedidoId = recuperar("pedido");
+  let pedidoActual = null;
+
+  async function api(ruta, opciones) {
+    if (!BACKEND) throw new Error("Este frontend no tiene configurada la URL del backend (variable BACKEND_URL).");
+    let respuesta;
+    try {
+      respuesta = await fetch(BACKEND + ruta, opciones);
+    } catch {
+      throw new Error(`No hubo respuesta de ${BACKEND}. Revisa que el backend esté desplegado y que BACKEND_URL apunte a él.`);
+    }
+    const datos = await respuesta.json().catch(() => ({}));
+    if (!respuesta.ok) throw Object.assign(new Error(datos.error || `El backend respondió ${respuesta.status}.`), { estado: respuesta.status });
+    return datos;
+  }
+
+  function avisar(error) {
+    const aviso = $("#aviso");
+    aviso.replaceChildren(el("strong", "", "No hay conexión con el backend"), el("span", "", error.message));
+    aviso.hidden = false;
+  }
+
+  // ---------- Pedir ----------
+  function pintarMenu() {
+    const lista = $("#menu");
+    if (!menu.length) {
+      if (!lista.firstChild) lista.append(el("li", "vacio", "El menú aparece cuando haya conexión con el backend."));
+      pintarCarrito();
+      return;
+    }
+    if (filas.size !== menu.length) {
+      lista.replaceChildren();
+      filas.clear();
+      for (const p of menu) {
+        const li = el("li", "tarjeta producto");
+        const datos = el("div", "datos");
+        const quedan = el("div", "quedan");
+        datos.append(el("div", "nombre", p.nombre), el("div", "precio", pesos.format(p.precio)), quedan);
+        const contador = el("div", "contador");
+        const menos = el("button", "menos", "−");
+        const cantidad = el("output");
+        const mas = el("button", "mas", "+");
+        menos.type = mas.type = "button";
+        menos.setAttribute("aria-label", `Quitar ${p.nombre}`);
+        mas.setAttribute("aria-label", `Agregar ${p.nombre}`);
+        menos.onclick = () => cambiar(p.producto, -1);
+        mas.onclick = () => cambiar(p.producto, +1);
+        contador.append(menos, cantidad, mas);
+        li.append(el("div", "inicial", p.nombre[0]), datos, contador);
+        lista.append(li);
+        filas.set(p.producto, { li, quedan, menos, cantidad, mas });
+      }
+    }
+    for (const p of menu) {
+      const fila = filas.get(p.producto);
+      const enCarrito = carrito.get(p.producto) || 0;
+      fila.quedan.textContent = p.existencias > 0 ? `Quedan ${p.existencias}` : "Agotado";
+      fila.quedan.className = "quedan" + (p.existencias === 0 ? " agotado" : p.existencias <= 3 ? " pocas" : "");
+      fila.li.classList.toggle("sin-existencias", p.existencias === 0);
+      fila.cantidad.textContent = enCarrito || "";
+      fila.menos.disabled = enCarrito === 0;
+      fila.mas.disabled = enCarrito >= Math.min(p.existencias, 10);
+    }
+    pintarCarrito();
+  }
+
+  function cambiar(producto, delta) {
+    const nueva = (carrito.get(producto) || 0) + delta;
+    nueva > 0 ? carrito.set(producto, nueva) : carrito.delete(producto);
+    pintarMenu();
+  }
+
+  function pintarCarrito() {
+    let unidades = 0, total = 0;
+    for (const p of menu) {
+      const n = carrito.get(p.producto) || 0;
+      unidades += n;
+      total += n * p.precio;
+    }
+    $("#car-cuenta").textContent = unidades ? `${unidades} ${unidades === 1 ? "producto" : "productos"}` : "Tu carrito está vacío";
+    $("#car-total").textContent = pesos.format(total);
+    $("#pedir").disabled = !unidades || !$("#cliente").value.trim();
+  }
+
+  async function pedir(evento) {
+    evento.preventDefault();
+    const boton = $("#pedir");
+    const error = $("#error-pedido");
+    boton.disabled = true;
+    error.hidden = true;
+    try {
+      const cliente = $("#cliente").value.trim();
+      const pedido = await api("/pedidos", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ cliente, items: [...carrito].map(([producto, cantidad]) => ({ producto, cantidad })) }),
+      });
+      recordar("cliente", cliente);
+      carrito.clear();
+      seguir(pedido);
+    } catch (e) {
+      error.textContent = e.message;
+      error.hidden = false;
+      pintarCarrito();
+    }
+  }
+
+  function seguir(pedido) {
+    pedidoActual = pedido;
+    pedidoId = pedido ? pedido.id : null;
+    recordar("pedido", pedidoId);
+    mostrarVista();
+  }
+
+  function pintarSeguimiento() {
+    const p = pedidoActual;
+    if (!p) return;
+    $("#seg-numero").textContent = p.numero;
+    $("#seg-para").textContent = `Para ${p.cliente}`;
+    const indice = ESTADOS.indexOf(p.estado);
+    for (const li of document.querySelectorAll(".pasos li")) {
+      const i = ESTADOS.indexOf(li.dataset.paso);
+      li.className = i < indice || p.estado === "listo" ? "hecho" : i === indice ? "actual" : "";
+    }
+    const estado = $("#seg-estado");
+    estado.textContent = p.estado === "rechazado" && p.motivo ? `${TEXTO_ESTADO.rechazado} ${p.motivo}.` : TEXTO_ESTADO[p.estado] || p.estado;
+    estado.className = "estado-texto " + p.estado;
+    const lineas = $("#seg-lineas");
+    lineas.replaceChildren();
+    for (const item of p.items) {
+      const li = el("li");
+      li.append(el("span", "", `${item.cantidad} × ${item.nombre}`), el("span", "", pesos.format(item.precio * item.cantidad)));
+      lineas.append(li);
+    }
+    const total = el("li", "total");
+    total.append(el("span", "", "Total"), el("span", "", pesos.format(p.total)));
+    lineas.append(total);
+  }
+
+  // ---------- Pantalla ----------
+  function pintarPantalla(pedidos) {
+    for (const estado of ESTADOS) {
+      const columna = $(`#col-${estado}`);
+      columna.replaceChildren();
+      for (const p of pedidos.filter((x) => x.estado === estado)) {
+        const ficha = el("li", "ficha");
+        ficha.append(el("b", "", p.numero), el("span", "", p.cliente));
+        columna.append(ficha);
+      }
+    }
+    const rechazados = pedidos.filter((p) => p.estado === "rechazado");
+    const nodo = $("#rechazados");
+    nodo.hidden = !rechazados.length;
+    nodo.replaceChildren(el("b", "", "Rechazados: "), document.createTextNode(rechazados.map((p) => `${p.numero} (${p.cliente})`).join(", ")));
+  }
+
+  function pintarInventario() {
+    const lista = $("#inventario");
+    lista.replaceChildren();
+    for (const p of menu) {
+      const li = el("li");
+      const clase = p.existencias === 0 ? " agotado" : p.existencias <= 3 ? " pocas" : "";
+      li.append(el("span", "", p.nombre), el("span", "pastilla" + clase, p.existencias));
+      lista.append(li);
+    }
+  }
+
+  async function reponer() {
+    const boton = $("#reponer");
+    boton.disabled = true;
+    try {
+      menu = await api("/inventario/reiniciar", { method: "POST" });
+      pintarInventario();
+    } catch (e) {
+      avisar(e);
+    } finally {
+      boton.disabled = false;
+    }
+  }
+
+  // ---------- Vistas y refresco ----------
+  const vistaActual = () => (location.hash === "#pantalla" ? "pantalla" : "pedir");
+
+  function mostrarVista() {
+    const vista = vistaActual();
+    $("#vista-pedir").hidden = vista !== "pedir";
+    $("#vista-pantalla").hidden = vista !== "pantalla";
+    for (const a of document.querySelectorAll(".pestanas a")) {
+      if (a.dataset.vista === vista) a.setAttribute("aria-current", "page");
+      else a.removeAttribute("aria-current");
+    }
+    const siguiendo = vista === "pedir" && Boolean(pedidoId);
+    $("#carta").hidden = siguiendo;
+    $("#seguimiento").hidden = !siguiendo || !pedidoActual;
+    $("#carrito").hidden = vista !== "pedir" || siguiendo;
+    pintarSeguimiento();
+    refrescar();
+  }
+
+  // Cada refresco de la pantalla son unas 27 lecturas de Firestore, y las
+  // lecturas tienen cuota diaria. Una pestaña oculta no necesita refrescarse.
+  let ocupado = false;
+  async function refrescar() {
+    if (document.hidden || ocupado) return;
+    ocupado = true;
+    try {
+      if (vistaActual() === "pantalla") {
+        const [pedidos, inventario] = await Promise.all([api("/pedidos"), api("/menu")]);
+        menu = inventario;
+        pintarPantalla(pedidos);
+        pintarInventario();
+      } else if (pedidoId) {
+        try {
+          pedidoActual = await api(`/pedidos/${encodeURIComponent(pedidoId)}`);
+        } catch (e) {
+          // Si el pedido guardado ya no existe (otra base, otro despliegue), se olvida.
+          if (e.estado === 404) return seguir(null);
+          throw e;
+        }
+        $("#seguimiento").hidden = false;
+        pintarSeguimiento();
+      } else {
+        menu = await api("/menu");
+        pintarMenu();
+      }
+      $("#aviso").hidden = true;
+    } catch (e) {
+      avisar(e);
+      if (vistaActual() === "pedir" && !pedidoId) pintarMenu();
+    } finally {
+      ocupado = false;
+    }
+  }
+
+  $("#form-pedido").addEventListener("submit", pedir);
+  $("#cliente").addEventListener("input", pintarCarrito);
+  $("#cliente").value = recuperar("cliente") || "";
+  $("#otro").addEventListener("click", () => seguir(null));
+  $("#reponer").addEventListener("click", reponer);
+  window.addEventListener("hashchange", mostrarVista);
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) refrescar(); });
+  mostrarVista();
+  setInterval(refrescar, 5000);
+</script>
+</body>
+</html>
