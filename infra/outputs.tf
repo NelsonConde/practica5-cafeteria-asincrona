@@ -10,3 +10,7 @@ output "url_backend" {
 output "url_frontend" {
   value = google_cloud_run_v2_service.frontend.uri
 }
+
+output "url_cocina" {
+  value = google_cloud_run_v2_service.cocina.uri
+}

@@ -31,3 +31,8 @@ variable "imagen_frontend" {
   description = "Imagen del frontend en Artifact Registry, con su etiqueta"
   type        = string
 }
+
+variable "imagen_cocina" {
+  description = "Imagen de la cocina en Artifact Registry, con su etiqueta"
+  type        = string
+}
