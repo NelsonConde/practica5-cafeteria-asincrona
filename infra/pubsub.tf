@@ -105,6 +105,13 @@ resource "google_pubsub_topic_iam_member" "pubsub_publica_muertos" {
   member = local.agente_pubsub
 }
 
+# El agente de Pub/Sub necesita permiso para informar a la cocina que mensajes muertos han sido entregadas al tema de nuerto.
+resource "google_pubsub_subscription_iam_member" "pubsub_consume_cocina" {
+  subscription = google_pubsub_subscription.cocina.name
+  role         = "roles/pubsub.subscriber"
+  member       = local.agente_pubsub
+}
+
 resource "google_pubsub_subscription" "cocina" {
   name  = "${var.prefijo}-cocina"
   topic = google_pubsub_topic.pedidos.id
@@ -135,11 +142,4 @@ resource "google_pubsub_subscription" "cocina" {
     google_service_account_iam_member.pubsub_firma_tokens,
     google_pubsub_topic_iam_member.pubsub_publica_muertos,
   ]
-}
-
-# El agente de Pub/Sub necesita permiso para reconocer/consumir mensajes de la suscripción original.
-resource "google_pubsub_subscription_iam_member" "pubsub_consume_cocina" {
-  subscription = google_pubsub_subscription.cocina.name
-  role         = "roles/pubsub.subscriber"
-  member       = local.agente_pubsub
 }
