@@ -85,6 +85,33 @@ resource "google_service_account_iam_member" "pubsub_firma_tokens" {
   depends_on = [google_pubsub_topic.pedidos]
 }
 
+# ---------- Mensajes muertos (Dead Letter) ----------
+
+resource "google_pubsub_topic" "muertos" {
+  name = "${var.prefijo}-pedidos-muertos"
+
+  depends_on = [google_project_service.apis]
+}
+
+resource "google_pubsub_subscription" "muertos" {
+  name  = "${var.prefijo}-pedidos-muertos"
+  topic = google_pubsub_topic.muertos.id
+}
+
+# El agente de Pub/Sub necesita permiso para publicar en el tema de muertos.
+resource "google_pubsub_topic_iam_member" "pubsub_publica_muertos" {
+  topic  = google_pubsub_topic.muertos.name
+  role   = "roles/pubsub.publisher"
+  member = local.agente_pubsub
+}
+
+# El agente de Pub/Sub necesita permiso para reconocer/consumir mensajes de la suscripción original.
+resource "google_pubsub_subscription_iam_member" "pubsub_consume_cocina" {
+  subscription = google_pubsub_subscription.cocina.name
+  role         = "roles/pubsub.subscriber"
+  member       = local.agente_pubsub
+}
+
 resource "google_pubsub_subscription" "cocina" {
   name  = "${var.prefijo}-cocina"
   topic = google_pubsub_topic.pedidos.id
@@ -94,6 +121,11 @@ resource "google_pubsub_subscription" "cocina" {
   retry_policy {
     minimum_backoff = "10s"
     maximum_backoff = "60s"
+  }
+
+  dead_letter_policy {
+    dead_letter_topic     = google_pubsub_topic.muertos.id
+    max_delivery_attempts = 5
   }
 
   push_config {
@@ -108,5 +140,6 @@ resource "google_pubsub_subscription" "cocina" {
   depends_on = [
     google_cloud_run_v2_service_iam_member.invocador_cocina,
     google_service_account_iam_member.pubsub_firma_tokens,
+    google_pubsub_topic_iam_member.pubsub_publica_muertos,
   ]
 }
