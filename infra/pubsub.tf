@@ -47,11 +47,6 @@ resource "google_cloud_run_v2_service" "cocina" {
         value = google_firestore_database.cafeteria.name
       }
 
-      env {
-        name  = "PROBABILIDAD_FALLO"
-        value = "0.5"
-      }
-      
     }
   }
 
